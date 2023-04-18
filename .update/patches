@@ -1325,6 +1325,24 @@ Patch_8_17()
 {
 	# https://dietpi.com/forum/t/cron-service-is-masked/16544
 	[[ $(systemctl is-enabled cron) == 'masked' ]] && G_EXEC systemctl unmask cron
+
+	# RPi: Patch onboard audio
+	if (( $G_HW_MODEL < 10 ))
+	then
+		[[ -f '/etc/modprobe.d/dietpi-disable_rpi_sound.conf' ]] && G_EXEC mv /etc/modprobe.d/dietpi-disable_rpi_{sound,audio}.conf
+		if grep -q '^[[:blank:]]*dtoverlay=dietpi-disable_hdmi_audio' /boot/config.txt
+		then
+			G_EXEC sed -i '/^[[:blank:]]*dtoverlay=dietpi-disable_hdmi_audio/d' /boot/config.txt
+			G_EXEC eval 'echo '\''options snd_bcm2835 enable_hdmi=0'\'' > /etc/modprobe.d/dietpi-disable_rpi_hdmi_audio.conf'
+		fi
+		if grep -q '^[[:blank:]]*dtoverlay=dietpi-disable_headphones' /boot/config.txt
+		then
+			G_EXEC sed -i '/^[[:blank:]]*dtoverlay=dietpi-disable_headphones/d' /boot/config.txt
+			G_EXEC eval 'echo '\''options snd_bcm2835 enable_headphones=0'\'' > /etc/modprobe.d/dietpi-disable_rpi_headphones.conf'
+		fi
+		[[ -f '/boot/overlays/dietpi-disable_hdmi_audio.dtbo' ]] && G_EXEC rm /boot/overlays/dietpi-disable_hdmi_audio.dtbo
+		[[ -f '/boot/overlays/dietpi-disable_headphones.dtbo' ]] && G_EXEC rm /boot/overlays/dietpi-disable_headphones.dtbo
+	fi
 }
 
 # v6.35 => v7 migration
